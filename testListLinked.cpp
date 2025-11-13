@@ -6,6 +6,7 @@ int main(){
 
     ListLinked<int> list;
 
+
     std::cout << list << std::endl; 
     std::cout << "size(): " << list.size() << std::endl; 
     std::cout << "empty(): " << list.empty() << std::endl; 

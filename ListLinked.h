@@ -1,67 +1,94 @@
 #ifndef LISTLINKED_H
 #define LISTLINKED_H
 
+#include <ostream>
+#include <stdexcept>
 #include "List.h"
 #include "Node.h"
 
 template <typename T>
 class ListLinked : public List<T> {
 private:
-    Node<T>* head;
-    int currentSize;
+    Node<T>* first;
+    int n;
+
+    void check_get_remove(int pos) const {
+        if (pos < 0 || pos >= n) throw std::out_of_range("posición inválida!!!!");
+    }
+    void check_insert(int pos) const {
+        if (pos < 0 || pos > n) throw std::out_of_range("posicion inválida!!!!");
+    }
+    Node<T>* node_at(int pos) const {
+        check_get_remove(pos);
+        Node<T>* cur = first;
+        for (int i = 0; i < pos; ++i) cur = cur->next;
+        return cur;
+    }
 
 public:
-    ListLinked() : head(nullptr), currentSize(0) {}
-
-    void add(const T& item) override {
-        Node<T>* newNode = new Node<T>(item);
-        newNode->next = head;
-        head = newNode;
-        ++currentSize;
+    ListLinked() : first(nullptr), n(0) {}
+    ~ListLinked() override {
+        while (first != nullptr) {
+            Node<T>* aux = first->next;
+            delete first;
+            first = aux;
+        }
+        n = 0;
     }
 
-    void remove(int index) override {
-        if (index < 0 || index >= currentSize) return;
-
-        Node<T>* current = head;
-        if (index == 0) {
-            head = current->next;
-            delete current;
+    void insert(int pos, T e) override {
+        check_insert(pos);
+        if (pos == 0) {
+            first = new Node<T>(e, first);
         } else {
-            Node<T>* prev = nullptr;
-            for (int i = 0; i < index; ++i) {
-                prev = current;
-                current = current->next;
-            }
-            prev->next = current->next;
-            delete current;
+            Node<T>* prev = node_at(pos - 1);
+            prev->next = new Node<T>(e, prev->next);
         }
-        --currentSize;
+        ++n;
     }
 
-    T get(int index) const override {
-        if (index < 0 || index >= currentSize) throw std::out_of_range("Index out of range");
+    void append(T e) override { insert(n, e); }
+    void prepend(T e) override { insert(0, e); }
 
-        Node<T>* current = head;
-        for (int i = 0; i < index; ++i) {
-            current = current->next;
+    T remove(int pos) override {
+        check_get_remove(pos);
+        T out;
+        if (pos == 0) {
+            Node<T>* del = first;
+            out = del->data;
+            first = del->next;
+            delete del;
+        } else {
+            Node<T>* prev = node_at(pos - 1);
+            Node<T>* del = prev->next;
+            out = del->data;
+            prev->next = del->next;
+            delete del;
         }
-        return current->data;
+        --n;
+        return out;
     }
 
-    int size() const override {
-        return currentSize;
+    T get(int pos) override { return node_at(pos)->data; }
+    int search(T e) override {
+        Node<T>* cur = first; int i = 0;
+        while (cur) { if (cur->data == e) return i; cur = cur->next; ++i; }
+        return -1;
     }
+    bool empty() override { return n == 0; }
+    int  size()  override { return n; }
 
-    ~ListLinked() {
-        Node<T>* current = head;
-        while (current != nullptr) {
-            Node<T>* next = current->next;
-            delete current;
-            current = next;
-        }
+    T operator[](int pos) { return get(pos); }
+
+    friend std::ostream& operator<<(std::ostream& out, const ListLinked<T>& list) {
+        out << "List => [\n";
+        Node<T>* cur = list.first;
+        while (cur) { out << "  " << cur->data << "\n"; cur = cur->next; }
+        out << "]\n";
+        out << "size(): " << list.n << "\n";
+        out << "empty(): " << (list.n == 0 ? "true" : "false") << "\n";
+        return out;
     }
 };
 
-#endif // LISTLINKED_H
-
+#endif 
